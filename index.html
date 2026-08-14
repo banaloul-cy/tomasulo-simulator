@@ -74,19 +74,19 @@
           <div class="config-grid">
             <fieldset>
               <legend>Reservation Stations</legend>
-              <label>Add/Sub <input type="number" min="1" max="8" id="cfg-count-addSub" /></label>
-              <label>Mul/Div <input type="number" min="1" max="8" id="cfg-count-mulDiv" /></label>
-              <label>Load Buf. <input type="number" min="1" max="8" id="cfg-count-load" /></label>
-              <label>Store Buf. <input type="number" min="1" max="8" id="cfg-count-store" /></label>
+              <label>Add/Sub <input type="text" inputmode="numeric" dir="ltr" lang="en" id="cfg-count-addSub" /></label>
+              <label>Mul/Div <input type="text" inputmode="numeric" dir="ltr" lang="en" id="cfg-count-mulDiv" /></label>
+              <label>Load Buf. <input type="text" inputmode="numeric" dir="ltr" lang="en" id="cfg-count-load" /></label>
+              <label>Store Buf. <input type="text" inputmode="numeric" dir="ltr" lang="en" id="cfg-count-store" /></label>
             </fieldset>
             <fieldset>
               <legend>Latencies (cycles)</legend>
-              <label>ADD <input type="number" min="1" max="20" id="cfg-lat-ADD" /></label>
-              <label>SUB <input type="number" min="1" max="20" id="cfg-lat-SUB" /></label>
-              <label>MUL <input type="number" min="1" max="20" id="cfg-lat-MUL" /></label>
-              <label>DIV <input type="number" min="1" max="20" id="cfg-lat-DIV" /></label>
-              <label>LOAD <input type="number" min="1" max="20" id="cfg-lat-LOAD" /></label>
-              <label>STORE <input type="number" min="1" max="20" id="cfg-lat-STORE" /></label>
+              <label>ADD <input type="text" inputmode="numeric" dir="ltr" lang="en" id="cfg-lat-ADD" /></label>
+              <label>SUB <input type="text" inputmode="numeric" dir="ltr" lang="en" id="cfg-lat-SUB" /></label>
+              <label>MUL <input type="text" inputmode="numeric" dir="ltr" lang="en" id="cfg-lat-MUL" /></label>
+              <label>DIV <input type="text" inputmode="numeric" dir="ltr" lang="en" id="cfg-lat-DIV" /></label>
+              <label>LOAD <input type="text" inputmode="numeric" dir="ltr" lang="en" id="cfg-lat-LOAD" /></label>
+              <label>STORE <input type="text" inputmode="numeric" dir="ltr" lang="en" id="cfg-lat-STORE" /></label>
             </fieldset>
           </div>
           <details class="config-details">
@@ -210,6 +210,19 @@
     <span>Tomasulo Algorithm Simulator &mdash; built for Computer Organization coursework. Vanilla HTML/CSS/JS, zero build step.</span>
   </footer>
 
-  <script type="module" src="js/main.js"></script>
+  <!--
+    Plain classic scripts (no type="module") loaded in dependency order,
+    each attaching its API to window.Tomasulo.* - see the MODULE FORMAT
+    NOTE at the top of js/core/config.js. This lets the page work when
+    opened directly via file:// (double-clicking index.html), which
+    browsers block for cross-file ES module imports.
+  -->
+  <script src="js/core/config.js"></script>
+  <script src="js/core/stations.js"></script>
+  <script src="js/core/simulator.js"></script>
+  <script src="js/ui/render.js"></script>
+  <script src="js/ui/schematic.js"></script>
+  <script src="js/ui/editor.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>

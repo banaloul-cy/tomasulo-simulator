@@ -6,12 +6,12 @@
  * ---------------------------------------------------------------------------
  */
 
-import test from 'node:test';
-import assert from 'node:assert/strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
 
-import { createDefaultConfig, PRESET_PROGRAMS } from '../js/core/config.js';
-import { createInitialState, advanceCycle, runToCompletion } from '../js/core/simulator.js';
-import { allStations } from '../js/core/stations.js';
+const { createDefaultConfig, PRESET_PROGRAMS } = require('../js/core/config.js');
+const { createInitialState, advanceCycle, runToCompletion } = require('../js/core/simulator.js');
+const { allStations } = require('../js/core/stations.js');
 
 function freshState(program, configOverrides = {}) {
   const config = createDefaultConfig();

@@ -10,22 +10,17 @@ correctly resolves RAW/WAR/WAW hazards, and visualizes every cycle live:
 instruction status, reservation stations, load/store buffers, register
 status/values, a CDB broadcast log, and an animated SVG datapath diagram.
 
-Pure vanilla HTML/CSS/JS (ES modules) — **no build step, no framework, no
-`npm install` required to run it.**
+Pure vanilla HTML/CSS/JS — **no build step, no framework, no `npm install`
+required to run it.** The browser-facing scripts are plain classic
+`<script>` tags (not ES modules), specifically so the page works when
+opened directly from `file://` — browsers block cross-file ES module
+`import`s from `file://` origins, which would otherwise leave every table
+empty with a CORS error in the console.
 
 ## Quick Start
 
-Just open [`index.html`](index.html) in a modern browser.
-
-> Some browsers block ES module imports (`import`/`export`) when a page is
-> opened directly from `file://`. If the page loads but the tables stay
-> empty, serve the folder over HTTP instead — for example:
->
-> ```bash
-> cd tomasulo-simulator
-> python -m http.server 8000
-> # then open http://localhost:8000/ in your browser
-> ```
+Just double-click [`index.html`](index.html), or open it from your
+browser's File menu. No server, no `npm install`.
 
 Once it's open:
 
@@ -72,7 +67,7 @@ tomasulo-simulator/
 │   │   ├── simulator.js     #   Tomasulo engine: issue/execute/write, CDB arbitration
 │   │   ├── stations.js      #   Reservation station / load-store buffer model
 │   │   └── config.js        #   Defaults: latencies, station counts, presets
-│   ├── ui/                  # DOM rendering — imports core, never the reverse
+│   ├── ui/                  # DOM rendering — reads core's namespace, never the reverse
 │   │   ├── render.js        #   Status tables (instructions, RS, buffers, registers, CDB log)
 │   │   ├── schematic.js     #   Live SVG datapath + CDB pulse animation
 │   │   └── editor.js        #   Program editor + configuration editor
@@ -88,8 +83,16 @@ tomasulo-simulator/
 ## Design Highlights
 
 - **`js/core/simulator.js` has no DOM dependency whatsoever** — it can be
-  imported directly by a Node test file, which is how correctness is
+  `require()`d directly by a Node test file, which is how correctness is
   actually verified (rather than by eyeballing the UI).
+- **No ES `import`/`export`, anywhere.** Every file instead attaches its
+  API to a shared `window.Tomasulo.*` namespace via plain `<script src>`
+  tags loaded in dependency order, while `js/core/*` also detects
+  CommonJS (`module.exports`) so the exact same file works under
+  `require()` in tests. This is what lets `index.html` be opened directly
+  via `file://` — cross-file ES module imports are blocked by browsers
+  under that origin, which is a common source of "the page loads but every
+  table is empty" bugs in zero-build projects.
 - **Register renaming** is implemented via a Register Status table (`Qi`):
   reading a register at issue time either captures its current value or
   the *tag* of whichever station will produce it next, which is what

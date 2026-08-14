@@ -6,10 +6,15 @@
  * the Register File + Memory boxes on the right. On every cycle that
  * produces a CDB broadcast, a small pulse travels along the bus from the
  * producing station to its destination box.
+ *
+ * See the MODULE FORMAT NOTE at the top of js/core/config.js for why this
+ * attaches to window.Tomasulo instead of using import/export.
  * ---------------------------------------------------------------------------
  */
+(function (global) {
+  'use strict';
 
-import { stationVisualState } from './render.js';
+const stationVisualState = global.Tomasulo.render.stationVisualState;
 
 const NS = 'http://www.w3.org/2000/svg';
 const ROW_H = 24;
@@ -47,7 +52,7 @@ const GROUP_DEFS = [
 ];
 
 /** (Re)builds the static schematic layout for the given station counts. */
-export function initSchematic(hostElement, config) {
+function initSchematic(hostElement, config) {
   container = hostElement;
   boxRects = new Map();
 
@@ -226,7 +231,7 @@ function spawnPulse(fromRect, toRect) {
 }
 
 /** Repaints box states and (once per new cycle) spawns CDB pulse animations. */
-export function updateSchematic(state) {
+function updateSchematic(state) {
   if (!svg) return;
 
   for (const pool of Object.values(state.pools)) {
@@ -258,3 +263,10 @@ function flashBox(dataName, active) {
   const rect = g.querySelector('rect');
   rect.classList.toggle('sch-box--broadcast', active);
 }
+
+  global.Tomasulo = global.Tomasulo || {};
+  global.Tomasulo.schematic = {
+    initSchematic: initSchematic,
+    updateSchematic: updateSchematic,
+  };
+})(window);

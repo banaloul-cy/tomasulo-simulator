@@ -2,7 +2,6 @@
   "name": "tomasulo-simulator",
   "version": "1.0.0",
   "description": "Interactive Tomasulo's Algorithm simulator for a Computer Organization course.",
-  "type": "module",
   "private": true,
   "scripts": {
     "test": "node --test tests/"

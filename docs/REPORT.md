@@ -297,10 +297,10 @@ visible focus outlines.
 
 No build step, no installation:
 
-1. Open `index.html` directly in any modern browser (double-click it, or
-   serve the folder with any static file server if your browser blocks
-   `file://` ES module imports — e.g. `python -m http.server` from the
-   project root, then visit `http://localhost:8000/`).
+1. Open `index.html` directly in any modern browser — just double-click
+   it. All scripts are plain classic `<script>` tags (not ES modules), so
+   nothing is blocked when running straight from a `file://` URL; no local
+   server is required.
 2. Pick a preset (or edit the program/configuration yourself), then use
    **Step** / **Run** / **Pause** / **Reset**.
 

@@ -40,13 +40,31 @@
  *      new station (resolving WAW/WAR for any later instruction that reads
  *      or writes the same register).
  * ---------------------------------------------------------------------------
+ *
+ * See the MODULE FORMAT NOTE at the top of js/core/config.js for why this
+ * uses a namespace/CommonJS dual-export pattern instead of import/export.
+ * ---------------------------------------------------------------------------
  */
+(function (global) {
+  'use strict';
 
-import { createStationPools, poolForOp, findFreeStation, allStations, freeStation, operandsReady } from './stations.js';
-import { STATION_TYPE_BY_OP, isArithmeticOp } from './config.js';
+  var Config = (typeof module !== 'undefined' && module.exports)
+    ? require('./config.js')
+    : global.Tomasulo.config;
+  var Stations = (typeof module !== 'undefined' && module.exports)
+    ? require('./stations.js')
+    : global.Tomasulo.stations;
+
+  var isArithmeticOp = Config.isArithmeticOp;
+  var createStationPools = Stations.createStationPools;
+  var poolForOp = Stations.poolForOp;
+  var findFreeStation = Stations.findFreeStation;
+  var allStations = Stations.allStations;
+  var freeStation = Stations.freeStation;
+  var operandsReady = Stations.operandsReady;
 
 /** Builds a fresh simulation state from a program + configuration. */
-export function createInitialState(program, config) {
+function createInitialState(program, config) {
   const registerStatus = {};
   Object.keys(config.registers).forEach((r) => (registerStatus[r] = null));
 
@@ -83,7 +101,7 @@ export function createInitialState(program, config) {
 }
 
 /** True once every instruction has completed its write-back stage. */
-export function isSimulationDone(state) {
+function isSimulationDone(state) {
   return state.program.every((instr) => instr.writeCycle !== null);
 }
 
@@ -106,7 +124,7 @@ function computeResult(op, vj, vk) {
  * Advances the simulation by exactly one clock cycle, mutating and
  * returning `state`. Safe to call repeatedly until isSimulationDone(state).
  */
-export function advanceCycle(state) {
+function advanceCycle(state) {
   if (state.finished) return state;
   state.cycle += 1;
 
@@ -315,12 +333,27 @@ function resolveOperand(state, station, slot, regName) {
   }
 }
 
-export { computeResult };
-
 /** Runs the whole program to completion (or until a safety cycle cap). */
-export function runToCompletion(state, maxCycles = 1000) {
+function runToCompletion(state, maxCycles) {
+  if (maxCycles === undefined) maxCycles = 1000;
   while (!state.finished && state.cycle < maxCycles) {
     advanceCycle(state);
   }
   return state;
 }
+
+  var SimulatorModule = {
+    createInitialState: createInitialState,
+    isSimulationDone: isSimulationDone,
+    advanceCycle: advanceCycle,
+    computeResult: computeResult,
+    runToCompletion: runToCompletion,
+  };
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = SimulatorModule;
+  } else {
+    global.Tomasulo = global.Tomasulo || {};
+    global.Tomasulo.simulator = SimulatorModule;
+  }
+})(typeof window !== 'undefined' ? window : globalThis);
