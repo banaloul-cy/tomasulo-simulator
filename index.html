@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tomasulo Algorithm Simulator</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="grid-backdrop" aria-hidden="true"></div>
+
+  <header class="app-header">
+    <div class="app-header__title">
+      <span class="app-header__chip">CO&nbsp;PROJECT</span>
+      <h1>Tomasulo Algorithm Simulator</h1>
+      <p class="app-header__subtitle">Dynamic instruction scheduling &middot; register renaming &middot; out-of-order execution</p>
+    </div>
+    <div class="cycle-display" aria-live="polite">
+      <span class="cycle-display__label">Cycle</span>
+      <span class="cycle-display__value" id="cycle-counter">0</span>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <!-- ============================== CONTROLS ============================== -->
+    <section class="panel controls-panel" aria-label="Simulation controls">
+      <div class="controls-row">
+        <button id="btn-step" class="btn btn--primary" type="button">Step ▸</button>
+        <button id="btn-run" class="btn btn--accent" type="button">Run ▸▸</button>
+        <button id="btn-pause" class="btn" type="button" disabled>Pause ❙❙</button>
+        <button id="btn-reset" class="btn btn--danger" type="button">Reset ↺</button>
+
+        <label class="speed-control">
+          <span>Speed</span>
+          <input type="range" id="speed-slider" min="1" max="10" value="5" />
+          <span id="speed-label">5</span>
+        </label>
+
+        <label class="preset-control">
+          <span>Preset</span>
+          <select id="preset-select"></select>
+        </label>
+
+        <span class="status-pill" id="status-pill">Ready</span>
+      </div>
+    </section>
+
+    <div class="layout-grid">
+      <!-- ============================== LEFT COLUMN ============================== -->
+      <div class="layout-col layout-col--left">
+        <section class="panel" aria-label="Program editor">
+          <h2 class="panel__title">Program Editor</h2>
+          <div class="table-scroll">
+            <table class="data-table" id="program-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Op</th>
+                  <th>Dest</th>
+                  <th>Src1</th>
+                  <th>Src2 / Base</th>
+                  <th>Offset</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="program-table-body"></tbody>
+            </table>
+          </div>
+          <button id="btn-add-instruction" class="btn btn--small" type="button">+ Add Instruction</button>
+        </section>
+
+        <section class="panel" aria-label="Configuration editor">
+          <h2 class="panel__title">Configuration</h2>
+          <div class="config-grid">
+            <fieldset>
+              <legend>Reservation Stations</legend>
+              <label>Add/Sub <input type="number" min="1" max="8" id="cfg-count-addSub" /></label>
+              <label>Mul/Div <input type="number" min="1" max="8" id="cfg-count-mulDiv" /></label>
+              <label>Load Buf. <input type="number" min="1" max="8" id="cfg-count-load" /></label>
+              <label>Store Buf. <input type="number" min="1" max="8" id="cfg-count-store" /></label>
+            </fieldset>
+            <fieldset>
+              <legend>Latencies (cycles)</legend>
+              <label>ADD <input type="number" min="1" max="20" id="cfg-lat-ADD" /></label>
+              <label>SUB <input type="number" min="1" max="20" id="cfg-lat-SUB" /></label>
+              <label>MUL <input type="number" min="1" max="20" id="cfg-lat-MUL" /></label>
+              <label>DIV <input type="number" min="1" max="20" id="cfg-lat-DIV" /></label>
+              <label>LOAD <input type="number" min="1" max="20" id="cfg-lat-LOAD" /></label>
+              <label>STORE <input type="number" min="1" max="20" id="cfg-lat-STORE" /></label>
+            </fieldset>
+          </div>
+          <details class="config-details">
+            <summary>Initial Register Values (F0&ndash;F10, R1&ndash;R3)</summary>
+            <div class="table-scroll">
+              <table class="data-table" id="reg-init-table">
+                <thead><tr id="reg-init-header"></tr></thead>
+                <tbody><tr id="reg-init-body"></tr></tbody>
+              </table>
+            </div>
+          </details>
+          <details class="config-details">
+            <summary>Initial Memory (address : value)</summary>
+            <div class="table-scroll">
+              <table class="data-table" id="mem-init-table">
+                <thead><tr><th>Address</th><th>Value</th><th></th></tr></thead>
+                <tbody id="mem-init-body"></tbody>
+              </table>
+            </div>
+            <button id="btn-add-mem" class="btn btn--small" type="button">+ Add Memory Cell</button>
+          </details>
+          <button id="btn-apply-config" class="btn btn--primary" type="button">Apply &amp; Reset</button>
+        </section>
+      </div>
+
+      <!-- ============================== RIGHT COLUMN ============================== -->
+      <div class="layout-col layout-col--right">
+        <section class="panel schematic-panel" aria-label="Live datapath schematic">
+          <h2 class="panel__title">Datapath &amp; Common Data Bus</h2>
+          <div id="schematic-container" class="schematic-container"></div>
+          <ul class="legend">
+            <li><span class="legend-swatch legend-swatch--waiting"></span> Waiting</li>
+            <li><span class="legend-swatch legend-swatch--executing"></span> Executing</li>
+            <li><span class="legend-swatch legend-swatch--broadcast"></span> Broadcasting (CDB)</li>
+          </ul>
+        </section>
+
+        <section class="panel" aria-label="Instruction status">
+          <h2 class="panel__title">Instruction Status</h2>
+          <div class="table-scroll">
+            <table class="data-table" id="instruction-status-table">
+              <thead>
+                <tr><th>#</th><th>Instruction</th><th>Issue</th><th>Exec Start</th><th>Exec End</th><th>Write</th></tr>
+              </thead>
+              <tbody id="instruction-status-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <div class="two-col">
+          <section class="panel" aria-label="Add/Sub reservation stations">
+            <h2 class="panel__title">Add/Sub Reservation Stations</h2>
+            <div class="table-scroll">
+              <table class="data-table" id="rs-addsub-table">
+                <thead>
+                  <tr><th>Name</th><th>Busy</th><th>Op</th><th>Vj</th><th>Vk</th><th>Qj</th><th>Qk</th></tr>
+                </thead>
+                <tbody id="rs-addsub-body"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="panel" aria-label="Mul/Div reservation stations">
+            <h2 class="panel__title">Mul/Div Reservation Stations</h2>
+            <div class="table-scroll">
+              <table class="data-table" id="rs-muldiv-table">
+                <thead>
+                  <tr><th>Name</th><th>Busy</th><th>Op</th><th>Vj</th><th>Vk</th><th>Qj</th><th>Qk</th></tr>
+                </thead>
+                <tbody id="rs-muldiv-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <div class="two-col">
+          <section class="panel" aria-label="Load buffers">
+            <h2 class="panel__title">Load Buffers</h2>
+            <div class="table-scroll">
+              <table class="data-table" id="lb-table">
+                <thead><tr><th>Name</th><th>Busy</th><th>Address</th><th>Dest</th></tr></thead>
+                <tbody id="lb-body"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="panel" aria-label="Store buffers">
+            <h2 class="panel__title">Store Buffers</h2>
+            <div class="table-scroll">
+              <table class="data-table" id="sb-table">
+                <thead><tr><th>Name</th><th>Busy</th><th>Address</th><th>Vj</th><th>Qj</th></tr></thead>
+                <tbody id="sb-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <div class="two-col">
+          <section class="panel" aria-label="Register status and values">
+            <h2 class="panel__title">Register Status (Qi) &amp; Values</h2>
+            <div class="table-scroll">
+              <table class="data-table" id="register-table">
+                <thead><tr><th>Reg</th><th>Qi</th><th>Value</th></tr></thead>
+                <tbody id="register-body"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="panel" aria-label="Common data bus broadcast log">
+            <h2 class="panel__title">CDB Broadcast Log</h2>
+            <div class="table-scroll table-scroll--log">
+              <table class="data-table" id="cdb-log-table">
+                <thead><tr><th>Cycle</th><th>Station</th><th>Dest</th><th>Value</th></tr></thead>
+                <tbody id="cdb-log-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <span>Tomasulo Algorithm Simulator &mdash; built for Computer Organization coursework. Vanilla HTML/CSS/JS, zero build step.</span>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
